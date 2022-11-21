@@ -6,270 +6,310 @@
 #include <Windows.h>
 
 typedef struct arr {
-	unsigned int val[32];//val[i]ÀÇ j¹øÂ° ºñÆ®: °İÀÚÀÇ ¿ŞÂÊ À§¸¦ (0,0)ÀÌ¶ó ÇÒ ¶§ (i,j)°¡ »ì¾Æ ÀÖ´ÂÁö
-	unsigned int c[32][4];//val[i]ÀÇ j*4~j*4+3¹øÂ° ºñÆ®: °İÀÚÀÇ ¿ŞÂÊ À§¸¦ (0,0)ÀÌ¶ó ÇÒ ¶§ (i,j) ÁÖº¯¿¡ ¸î °³°¡ ÄÑÀú ÀÖ´ÂÁö
-	int on, on2;//ÀÌ ±¸°£À» º¼ ÇÊ¿ä°¡ ÀÖ´ÂÁö
-}arr;//°İÀÚÀÇ 32*32 ±¸°£À» ÀúÀåÇÏ´Â ±¸Á¶Ã¼
+    unsigned int val[32];//val[i]ì˜ jë²ˆì§¸ ë¹„íŠ¸: ê²©ìì˜ ì™¼ìª½ ìœ„ë¥¼ (0,0)ì´ë¼ í•  ë•Œ (i,j)ê°€ ì‚´ì•„ ìˆëŠ”ì§€
+    unsigned int c[32][4];//val[i]ì˜ j*4~j*4+3ë²ˆì§¸ ë¹„íŠ¸: ê²©ìì˜ ì™¼ìª½ ìœ„ë¥¼ (0,0)ì´ë¼ í•  ë•Œ (i,j) ì£¼ë³€ì— ëª‡ ê°œê°€ ì¼œì € ìˆëŠ”ì§€
+    int on, on2;//ì´ êµ¬ê°„ì„ ë³¼ í•„ìš”ê°€ ìˆëŠ”ì§€
+}arr;//ê²©ìì˜ 32*32 êµ¬ê°„ì„ ì €ì¥í•˜ëŠ” êµ¬ì¡°ì²´
 arr board[100][100];
 inline void sv(int x, int y, int v)
 {
-	if (v)
-	{
-		board[x >> 5][y >> 5].val[x & 31] |= (1U << (y & 31));
-	}
-	else
-	{
-		board[x >> 5][y >> 5].val[x & 31] &= 4294967295U - (1U << (y & 31));
-	}
-}//x,yÀÇ »óÅÂ¸¦ ¹Ù²Ş
+    if (v)
+    {
+        board[x >> 5][y >> 5].val[x & 31] |= (1U << (y & 31));
+    }
+    else
+    {
+        board[x >> 5][y >> 5].val[x & 31] &= 4294967295U - (1U << (y & 31));
+    }
+}//x,yì˜ ìƒíƒœë¥¼ ë°”ê¿ˆ
 inline void pc(int x, int y)
 {
-	board[x >> 5][y >> 5].c[x & 31][(y & 24) >> 3] += (1 << ((y & 7) * 4));
-}//x,yÀÇ ÁÖº¯¿¡ »ì¾Æ ÀÖ´Â ¼¼Æ÷ÀÇ °³¼ö Ä«¿îÅÍ¸¦ Áõ°¡½ÃÅ´
+    board[x >> 5][y >> 5].c[x & 31][(y & 24) >> 3] += (1 << ((y & 7) * 4));
+}//x,yì˜ ì£¼ë³€ì— ì‚´ì•„ ìˆëŠ” ì„¸í¬ì˜ ê°œìˆ˜ ì¹´ìš´í„°ë¥¼ ì¦ê°€ì‹œí‚´
 inline int gv(int x, int y)
 {
-	return !!(board[x >> 5][y >> 5].val[x & 31] & ((1U << (y & 31))));
-}//x,yÀÇ »óÅÂ¸¦ °¡Á®¿è
+    return !!(board[x >> 5][y >> 5].val[x & 31] & ((1U << (y & 31))));
+}//x,yì˜ ìƒíƒœë¥¼ ê°€ì ¸ìš¤
 inline int gc(int x, int y)
 {
-	return (board[x >> 5][y >> 5].c[x & 31][(y & 24) >> 3] & (15 << ((y & 7) * 4))) >> (y * 4);
-}//x,yÀÇ ÁÖº¯¿¡ »ì¾Æ ÀÖ´Â ¼¼Æ÷ÀÇ °³¼ö ¸®ÅÏ
+    return (board[x >> 5][y >> 5].c[x & 31][(y & 24) >> 3] & (15 << ((y & 7) * 4))) >> (y * 4);
+}//x,yì˜ ì£¼ë³€ì— ì‚´ì•„ ìˆëŠ” ì„¸í¬ì˜ ê°œìˆ˜ ë¦¬í„´
 int dx[8] = { 1,1,1,0,-1,-1,-1,0 };
 int dy[8] = { 1,0,-1,-1,-1,0,1,1 };
-void set(int N, int M, char* brd)//[N][M+1] Å©±âÀÇ 2Â÷¿ø ¹è¿­ÀÌ³ª N*(M+1) Å©±âÀÇ 1Â÷¿ø ¹è¿­ ¹Ş¾Æ¼­ º¸µå ±¸Á¶Ã¼ ¹è¿­¿¡ ÀúÀåÇÔ(i*(M+1)+M ¹øÂ°´Â Ãâ·ÂÀ» À§ÇÑ ³Î ¹®ÀÚ)
+void set(int N, int M, char* brd)//[N][M+1] í¬ê¸°ì˜ 2ì°¨ì› ë°°ì—´ì´ë‚˜ N*(M+1) í¬ê¸°ì˜ 1ì°¨ì› ë°°ì—´ ë°›ì•„ì„œ ë³´ë“œ êµ¬ì¡°ì²´ ë°°ì—´ì— ì €ì¥í•¨(i*(M+1)+M ë²ˆì§¸ëŠ” ì¶œë ¥ì„ ìœ„í•œ ë„ ë¬¸ì)
 {
-	int i, j, k, l;
-	for (i = 0; i <= (N >> 5); i++)
-	{
-		for (j = 0; j <= (M >> 5); j++)
-		{
-			int mk = (i << 5) + 32;
-			int ml = (j << 5) + 32;
-			if (mk > N)
-				mk = N;
-			if (ml > M)
-				ml = M;
-			for (k = (i << 5); k < mk; k++)
-			{
-				for (l = (j << 5); l < ml; l++)
-				{
-					sv(k, l, (*(brd + k * (M + 1) + l)) == 'O');
-					board[i][j].on |= (*(brd + k * (M + 1) + l)) == 'O';
-				}
+    int i, j, k, l;
+    for (i = 0; i <= (N >> 5); i++)
+    {
+        for (j = 0; j <= (M >> 5); j++)
+        {
+            int mk = (i << 5) + 32;
+            int ml = (j << 5) + 32;
+            if (mk > N)
+                mk = N;
+            if (ml > M)
+                ml = M;
+            for (k = (i << 5); k < mk; k++)
+            {
+                for (l = (j << 5); l < ml; l++)
+                {
+                    sv(k, l, (*(brd + k * (M + 1) + l)) == 'O');
+                    board[i][j].on |= (*(brd + k * (M + 1) + l)) == 'O';
+                }
 
-			}
-		}
-	}
+            }
+        }
+    }
 }
-void proc(int N, int M)//ÁÖº¯¿¡ »ì¾Æ ÀÖ´Â ¼¼Æ÷ °è¼ö °è»ê
+void proc(int N, int M)//ì£¼ë³€ì— ì‚´ì•„ ìˆëŠ” ì„¸í¬ ê³„ìˆ˜ ê³„ì‚°
 {
-	int i, j, k, l;
-	for (i = 0; i <= (N >> 5); i++)
-	{
-		for (j = 0; j <= (M >> 5); j++)
-		{
-			memset(board[i][j].c, 0, sizeof(board[i][j].c));
-			board[i][j].on2 = 0;
-		}
-	}
-	for (i = 0; i <= (N >> 5); i++)
-	{
-		for (j = 0; j <= (M >> 5); j++)
-		{
-			if (board[i][j].on == 0)
-				continue;
-			board[i][j].on2 = 1;
-			int mk = (i << 5) + 32;
-			int ml = (j << 5) + 32;
-			if (mk > N)
-				mk = N;
-			if (ml > M)
-				ml = M;
-			for (k = (i << 5); k < mk; k++)
-			{
-				for (l = (j << 5); l < ml; l++)
-				{
-					if (gv(k, l))
-					{
-						int m;
-						for (m = 0; m < 8; m++)
-						{
-							int nx = (k + N + dx[m]) % N;
-							int ny = (l + M + dy[m]) % M;
-							pc(nx, ny);
-							board[nx >> 5][ny >> 5].on2 = 1;
-						}
-					}
-				}
-			}
-		}
-	}
+    int i, j, k, l;
+    for (i = 0; i <= (N >> 5); i++)
+    {
+        for (j = 0; j <= (M >> 5); j++)
+        {
+            memset(board[i][j].c, 0, sizeof(board[i][j].c));
+            board[i][j].on2 = 0;
+        }
+    }
+    for (i = 0; i <= (N >> 5); i++)
+    {
+        for (j = 0; j <= (M >> 5); j++)
+        {
+            if (board[i][j].on == 0)
+                continue;
+            board[i][j].on2 = 1;
+            int mk = (i << 5) + 32;
+            int ml = (j << 5) + 32;
+            if (mk > N)
+                mk = N;
+            if (ml > M)
+                ml = M;
+            for (k = (i << 5); k < mk; k++)
+            {
+                for (l = (j << 5); l < ml; l++)
+                {
+                    if (gv(k, l))
+                    {
+                        int m;
+                        for (m = 0; m < 8; m++)
+                        {
+                            int nx = (k + N + dx[m]) % N;
+                            int ny = (l + M + dy[m]) % M;
+                            pc(nx, ny);
+                            board[nx >> 5][ny >> 5].on2 = 1;
+                        }
+                    }
+                }
+            }
+        }
+    }
 }
-void proc2(int N, int M)//»ì¾Æ ÀÖ´Â ¼¼Æ÷ÀÇ °³¼ö·Î »óÅÂ ¾÷µ¥ÀÌÆ®
+void proc2(int N, int M)//ì‚´ì•„ ìˆëŠ” ì„¸í¬ì˜ ê°œìˆ˜ë¡œ ìƒíƒœ ì—…ë°ì´íŠ¸
 {
-	int i, j, k, l;
-	for (i = 0; i <= (N >> 5); i++)
-	{
-		for (j = 0; j <= (M >> 5); j++)
-		{
-			if (board[i][j].on2 == 0)
-				continue;
-			board[i][j].on = 0;
-			int mk = (i << 5) + 32;
-			int ml = (j << 5) + 32;
-			if (mk > N)
-				mk = N;
-			if (ml > M)
-				ml = M;
-			for (k = (i << 5); k < mk; k++)
-			{
-				for (l = (j << 5); l < ml; l++)
-				{
-					int r = gc(k, l);
-					int v = (r == 3) || (r == 2 && gv(k, l));
-					board[i][j].on |= v;
-					sv(k, l, v);
-				}
-			}
-		}
-	}
+    int i, j, k, l;
+    for (i = 0; i <= (N >> 5); i++)
+    {
+        for (j = 0; j <= (M >> 5); j++)
+        {
+            if (board[i][j].on2 == 0)
+                continue;
+            board[i][j].on = 0;
+            int mk = (i << 5) + 32;
+            int ml = (j << 5) + 32;
+            if (mk > N)
+                mk = N;
+            if (ml > M)
+                ml = M;
+            for (k = (i << 5); k < mk; k++)
+            {
+                for (l = (j << 5); l < ml; l++)
+                {
+                    int r = gc(k, l);
+                    int v = (r == 3) || (r == 2 && gv(k, l));
+                    board[i][j].on |= v;
+                    sv(k, l, v);
+                }
+            }
+        }
+    }
 }
-void upd(int N, int M, char* brd)//ÇöÀç »óÅÂ¸¦ char¿¡ ÀúÀåÇÔ
+void upd(int N, int M, char* brd)//í˜„ì¬ ìƒíƒœë¥¼ charì— ì €ì¥í•¨
 {
-	int i, j, k, l;
-	for (i = 0; i <= (N >> 5); i++)
-	{
+    int i, j, k, l;
+    for (i = 0; i <= (N >> 5); i++)
+    {
 
-		for (j = 0; j <= (M >> 5); j++)
-		{
-			int mk = (i << 5) + 32;
-			int ml = (j << 5) + 32;
-			if (mk > N)
-				mk = N;
-			if (ml > M)
-				ml = M;
-			for (k = (i << 5); k < mk; k++)
-			{
-				brd[k * (M + 1) + M] = '\0';
-				for (l = (j << 5); l < ml; l++)
-				{
-					brd[k * (M + 1) + l] = (gv(k, l) ? 'O' : '.');
-				}
-			}
-		}
-	}
+        for (j = 0; j <= (M >> 5); j++)
+        {
+            int mk = (i << 5) + 32;
+            int ml = (j << 5) + 32;
+            if (mk > N)
+                mk = N;
+            if (ml > M)
+                ml = M;
+            for (k = (i << 5); k < mk; k++)
+            {
+                brd[k * (M + 1) + M] = '\0';
+                for (l = (j << 5); l < ml; l++)
+                {
+                    brd[k * (M + 1) + l] = (gv(k, l) ? 'O' : '.');
+                }
+            }
+        }
+    }
 }
-void rep(int N, int M, int c, char* brd, int pr) {//½ºÅÜÀ» K¹ø ¹İº¹
+void rep(int N, int M, int c, char* brd, int pr) {//ìŠ¤í…ì„ Kë²ˆ ë°˜ë³µ
 
-	FILE* fp = NULL;
-	fp = fopen("/Users/Sunrin/Desktop/c_project/game_file", "r+");
-	if (fp == NULL)
-		printf("ÆÄÀÏ¿ÀÇÂ ¿À·ù");
-
-
-
-	set(N, M, brd);
-	int i;
-	for (i = 0; i < c; i++)
-	{
-		proc(N, M);
-		proc2(N, M);
-		upd(N, M, brd);
-		if (pr) {//Ãâ·Â Çü½Ä ¼öÁ¤ÇÏ°í ½ÍÀ¸¸é ¿©±â¸¦ ¼öÁ¤
-			int j;
-			printf("%d\n", i);
-			for (j = 0; j < N; j++)
-			{
-				printf("%3d %s\n", j, brd + (j * (M + 1)));
-			}
-		}
-		Sleep(300);
-
-		
-		
+    FILE* fp = NULL;
+//    fp = fopen("/Users/Sunrin/Desktop/c_project/game_file", "r+");
+    fp = fopen("/Users/moontaeseo/Desktop/codeing/single/practice/C/practice_01_c/game_file", "w");  // ìƒˆë¡œ ë®ì–´ì“°ê¸°
+    if (fp == NULL)
+        printf("íŒŒì¼ì˜¤í”ˆ ì˜¤ë¥˜");
 
 
-		for (int i = 0; i < N; i++)
-		{
-			for (int j = 0; j < M; j++)
-			{
-				if (*(brd + i * (M + 1) + j) == 'O')
-				{
-					// printf("%d %d = %d\n", i, j, *(brd + i * (M + 1) + j));
-					fprintf(fp, "%d %d\n", i, j);
-				}
-			}
-			printf("\n");
-		}
-		Sleep(3000000);
-	}
+
+    set(N, M, brd);
+    int i;
+    for (i = 0; i < c; i++)
+    {
+        proc(N, M);
+        proc2(N, M);
+        upd(N, M, brd);
+        if (pr) {//ì¶œë ¥ í˜•ì‹ ìˆ˜ì •í•˜ê³  ì‹¶ìœ¼ë©´ ì—¬ê¸°ë¥¼ ìˆ˜ì •
+            int j;
+            printf("%d\n", i);
+            for (j = 0; j < N; j++)
+            {
+                printf("%3d %s\n", j, brd + (j * (M + 1)));
+            }
+        }
+        Sleep(500);
+
+        
+        
+        // ê²Œì„ì´ ëŒì•„ê°€ëŠ” ê° íšŒì°¨ë§ˆë‹¤ ìƒíƒœê°€ onì¸ ë°°ì—´ë“¤ì„ íŒŒì¼ì— ì¶œë ¥
+        
+        for (int i = 0; i < N; i++)
+        {
+            for (int j = 0; j < M; j++)
+            {
+                if (*(brd + i * (M + 1) + j) == 'O')
+                {
+                    // printf("%d %d = %d\n", i, j, *(brd + i * (M + 1) + j));
+                    fprintf(fp, "%d %d\n", i, j);
+                }
+            }
+//            printf("\n");
+        }
+        Sleep(3000);
+    }
 }
-void cvt(int N, int M, char(*arr)[3010], char* brd) {//[3010][3010] 2Â÷¿ø ¹è¿­À» 1Â÷¿ø ¹è¿­¿¡ ´ãÀ½
-	int i;
-	for (i = 0; i < N; i++)
-	{
-		int j;
-		for (j = 0; j <= M; j++) {
-			brd[i * (M + 1) + j] = arr[i][j];
-		}
-	}
+void cvt(int N, int M, char(*arr)[3010], char* brd) {//[3010][3010] 2ì°¨ì› ë°°ì—´ì„ 1ì°¨ì› ë°°ì—´ì— ë‹´ìŒ
+    int i;
+    for (i = 0; i < N; i++)
+    {
+        int j;
+        for (j = 0; j <= M; j++) {
+            brd[i * (M + 1) + j] = arr[i][j];
+        }
+    }
 }
-void cvt2(int N, int M, char(*arr)[3010], char* brd) {//[3010][3010] 2Â÷¿ø ¹è¿­¿¡ 1Â÷¿ø ¹è¿­À» ÀúÀå
-	int i;
-	for (i = 0; i < N; i++)
-	{
-		int j;
-		for (j = 0; j <= M; j++) {
-			arr[i][j] = brd[i * (M + 1) + j];
-		}
-	}
+void cvt2(int N, int M, char(*arr)[3010], char* brd) {//[3010][3010] 2ì°¨ì› ë°°ì—´ì— 1ì°¨ì› ë°°ì—´ì„ ì €ì¥
+    int i;
+    for (i = 0; i < N; i++)
+    {
+        int j;
+        for (j = 0; j <= M; j++) {
+            arr[i][j] = brd[i * (M + 1) + j];
+        }
+    }
 }
-void slp(int N, int M, int c, int p, char(*arr)[3010]) {//Å©±â, ¹İº¹ È½¼ö, Ãâ·Â À¯¹« [3010][3010] 2Â÷¿ø ¹è¿­ÀÌ ÁÖ¾îÁö¸é 2Â÷¿ø ¹è¿­¿¡ ¿¬»êÀ» n¹ø ÁøÇà
+void slp(int N, int M, int c, int p, char(*arr)[3010]) {//í¬ê¸°, ë°˜ë³µ íšŸìˆ˜, ì¶œë ¥ ìœ ë¬´ [3010][3010] 2ì°¨ì› ë°°ì—´ì´ ì£¼ì–´ì§€ë©´ 2ì°¨ì› ë°°ì—´ì— ì—°ì‚°ì„ në²ˆ ì§„í–‰
 
-	char* x = (char*)malloc(10000000);
-	memset(x, '.', sizeof(x));
-	int j;
-	for (j = 0; j < N; j++)
-	{
-		x[j * (M + 1) + M] = '\0';
+    char* x = (char*)malloc(10000000);
+    memset(x, '.', sizeof(x));
+    int j;
+    for (j = 0; j < N; j++)
+    {
+        x[j * (M + 1) + M] = '\0';
 
 
-	}
-	cvt(N, M, arr, x);  // 1Â÷¿ø ¹è¿­¿¡ ´ã±â
-	rep(N, M, c, x, p);
-	cvt2(N, M, arr, x);  // 2Â÷¿ø ¹è¿­¿¡ ´ã±â
+    }
+    cvt(N, M, arr, x);  // 1ì°¨ì› ë°°ì—´ì— ë‹´ê¸°
+    rep(N, M, c, x, p);
+    cvt2(N, M, arr, x);  // 2ì°¨ì› ë°°ì—´ì— ë‹´ê¸°
 
 
 }
+
+
+
+char loadMap (void) {
+    // ë§´ì´ ì €ì¥ëœ íŒŒì¼ì˜ ê²½ë¡œë¥¼ ë°›ê³  ì´ë¥¼ ë¶ˆëŸ¬ë“¤ì¸ ë’¤, ë°°ì—´ì— ë‹´ê³  mapì„ í˜¸ì¶œí•˜ì—¬ ë§µì„ ì™„ì„±
+    
+    
+    char ch[1000];
+    int i, j;
+    while(getchar() != '\n');  //ì…ë ¥ë²„í¼ ì´ˆê¸°í™”
+    printf("ë§µì´ ì €ì¥ëœ íŒŒì¼ ê²½ë¡œë¥¼ ì…ë ¥í•´ì£¼ì„¸ìš”");
+    scanf("%s", ch);
+    
+    
+    FILE* fp = NULL;
+    fp = fopen(ch, "r");
+    if (fp == NULL)
+        printf("íŒŒì¼ì˜¤í”ˆ ì˜¤ë¥˜");
+    
+    fscanf(fp, "%d %d\n", &i, &j);
+}
+
+char creatMap (void) {
+    // ìƒˆë¡œìš´ ë§µì„ ë§Œë“¤ ìˆ˜ ìˆë„ë¡ ì…ë ¥ì„ ë°›ê³  ì´ë¥¼ ë°°ì—´ì— ë‹´ì•„ mapì„ í˜¸ì¶œí•˜ì—¬ ë§´ì„ ì™„ì„±
+}
+
+void map (void) {
+    // ë°°ì—´ì„ í’€ì–´ ê° ìœ„ì¹˜ì— í‘œì‹œë¥¼ í•˜ê³  ë§µì„ ìƒì„±
+}
+
+
 
 char arr3[3010][3010];
 
 int main()
 {
-	system("mode con cols=100 lines=100");
-	int N = 60;
-	int M = 60;
+    int input;
+    printf("<ê²Œì„ì˜ ì‹œì‘ ëª¨ë“œë¥¼ ì…ë ¥í•´ì£¼ì„¸ìš”>\n\n");
+    printf("    1. ê²Œì„íŒŒì¼ ë¶ˆëŸ¬ì˜¤ê¸°\n");
+    printf("    2. ê²Œì„ ì‹œì‘ì§€ì  ì§€ì •í•˜ê¸°\n\n\n>> ");
+    scanf("%d", &input);
+    
+    // ì´ ë’¤ì— ì‚¬ìš©ìê°€ ì…ë ¥í•œ ê²Œì„ ëª¨ë“œì— ë”°ë¼ ë§µì´ ì €ì¥ëœ íŒŒì¼ì„ ë¶ˆëŸ¬ì˜¤ê±°ë‚˜, ìƒˆë¡œìš´ ë§µì„ ì§€ì •í•´ì„œ ê²Œì„ì„ ì‹œì‘í•  ìˆ˜ ìˆë„ë¡ êµ¬í˜„.
+    
+    system("mode con cols=100 lines=100");
+    int N = 60;
+    int M = 60;
 
-	arr3[3][10] = 'O';
-	arr3[3][11] = 'O';
-	arr3[3][12] = 'O';
-	arr3[2][11] = 'O';
-	arr3[4][12] = 'O';
+    arr3[3][10] = 'O';
+    arr3[3][11] = 'O';
+    arr3[3][12] = 'O';
+    arr3[2][11] = 'O';
+    arr3[4][12] = 'O';
 
-	
+    
 
 
-	/*for (int i = 0; i < 60; i++)
-	{
-		for (int j = 0; j < 30; j++)
-		{
-			if (arr3[i][j] == 'O')
-				printf("%d %d = %d\n", i, j, arr3[i][j]);
-		}
-		printf("\n");
-	}
-	Sleep(100000);*/
+    /*for (int i = 0; i < 60; i++)
+    {
+        for (int j = 0; j < 30; j++)
+        {
+            if (arr3[i][j] == 'O')
+                printf("%d %d = %d\n", i, j, arr3[i][j]);
+        }
+        printf("\n");
+    }
+    Sleep(100000);*/
 
-	slp(N, M, 10000, 1, arr3);
+    slp(N, M, 10000, 1, arr3);
 }
 
