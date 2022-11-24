@@ -1,4 +1,4 @@
-#include <stdio.h> 
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <conio.h>
@@ -15,10 +15,10 @@ void clearscreen()
 	SetConsoleCursorPosition(hOut, Pos);
 }
 typedef struct arr {
-	unsigned int val[32];//val[i]�� j��° ��Ʈ: ������ ���� ���� (0,0)�̶� �� �� (i,j)�� ��� �ִ���
-	unsigned int c[32][4];//val[i]�� j*4~j*4+3��° ��Ʈ: ������ ���� ���� (0,0)�̶� �� �� (i,j) �ֺ��� �� ���� ���� �ִ���
-	int on, on2;//�� ������ �� �ʿ䰡 �ִ���
-}arr;//������ 32*32 ������ �����ϴ� ����ü
+	unsigned int val[32];//val[i]의 j번째 비트: 격자의 왼쪽 위를 (0,0)이라 할 때 (i,j)가 살아 있는지
+	unsigned int c[32][4];//val[i]의 j*4~j*4+3번째 비트: 격자의 왼쪽 위를 (0,0)이라 할 때 (i,j) 주변에 몇 개가 켜저 있는지
+	int on, on2;//이 구간을 볼 필요가 있는지
+}arr;//격자의 32*32 구간을 저장하는 구조체
 arr board[100][100];
 inline void sv(int x, int y, int v)
 {
@@ -30,22 +30,22 @@ inline void sv(int x, int y, int v)
 	{
 		board[x >> 5][y >> 5].val[x & 31] &= 4294967295U - (1U << (y & 31));
 	}
-}//x,y�� ���¸� �ٲ�
+}//x,y의 상태를 바꿈
 inline void pc(int x, int y)
 {
 	board[x >> 5][y >> 5].c[x & 31][(y & 24) >> 3] += (1 << ((y & 7) * 4));
-}//x,y�� �ֺ��� ��� �ִ� ������ ���� ī���͸� ������Ŵ
+}//x,y의 주변에 살아 있는 세포의 개수 카운터를 증가시킴
 inline int gv(int x, int y)
 {
 	return !!(board[x >> 5][y >> 5].val[x & 31] & ((1U << (y & 31))));
-}//x,y�� ���¸� ������
+}//x,y의 상태를 가져욤
 inline int gc(int x, int y)
 {
 	return (board[x >> 5][y >> 5].c[x & 31][(y & 24) >> 3] & (15 << ((y & 7) * 4))) >> (y * 4);
-}//x,y�� �ֺ��� ��� �ִ� ������ ���� ����
+}//x,y의 주변에 살아 있는 세포의 개수 리턴
 int dx[8] = { 1,1,1,0,-1,-1,-1,0 };
 int dy[8] = { 1,0,-1,-1,-1,0,1,1 };
-void set(int N, int M, char* brd)//[N][M+1] ũ���� 2���� �迭�̳� N*(M+1) ũ���� 1���� �迭 �޾Ƽ� ���� ����ü �迭�� ������(i*(M+1)+M ��°�� ����� ���� �� ����)
+void set(int N, int M, char* brd)//[N][M+1] 크기의 2차원 배열이나 N*(M+1) 크기의 1차원 배열 받아서 보드 구조체 배열에 저장함(i*(M+1)+M 번째는 출력을 위한 널 문자)
 {
 	int i, j, k, l;
 	for (i = 0; i <= (N >> 5); i++)
@@ -70,7 +70,7 @@ void set(int N, int M, char* brd)//[N][M+1] ũ���� 2���� �迭�
 		}
 	}
 }
-void proc(int N, int M)//�ֺ��� ��� �ִ� ���� ��� ���
+void proc(int N, int M)//주변에 살아 있는 세포 계수 계산
 {
 	int i, j, k, l;
 	for (i = 0; i <= (N >> 5); i++)
@@ -122,7 +122,7 @@ void proc(int N, int M)//�ֺ��� ��� �ִ� ���� ���
 		}
 	}
 }
-void proc2(int N, int M)//��� �ִ� ������ ������ ���� ������Ʈ
+void proc2(int N, int M)//살아 있는 세포의 개수로 상태 업데이트
 {
 	int i, j, k, l;
 	for (i = 0; i <= (N >> 5); i++)
@@ -151,7 +151,7 @@ void proc2(int N, int M)//��� �ִ� ������ ������
 		}
 	}
 }
-void upd(int N, int M, char* brd)//���� ���¸� char�� ������
+void upd(int N, int M, char* brd)//현재 상태를 char에 저장함
 {
 	int i, j, k, l;
 	for (i = 0; i <= (N >> 5); i++)
@@ -176,7 +176,7 @@ void upd(int N, int M, char* brd)//���� ���¸� char�� ��
 		}
 	}
 }
-void rep(int N, int M, int c, char* brd, int pr) {//������ K�� �ݺ�
+void rep(int N, int M, int c, char* brd, int pr) {//스텝을 K번 반복
 	set(N, M, brd);
 	int i;
 	for (i = 0; i < c; i++)
@@ -184,7 +184,7 @@ void rep(int N, int M, int c, char* brd, int pr) {//������ K�� �
 		proc(N, M);
 		proc2(N, M);
 
-		if (pr) {//��� ���� �����ϰ� ������ ���⸦ ����
+		if (pr) {//출력 형식 수정하고 싶으면 여기를 수정
 			upd(N, M, brd);
 			clearscreen();
 			int j;
@@ -199,7 +199,7 @@ void rep(int N, int M, int c, char* brd, int pr) {//������ K�� �
 		{
 			if (i % 100 == 0)
 			{
-				printf("%d �� �Ϸ�\n", i + 1);
+				printf("%d 턴 완료\n", i + 1);
 			}
 		}
 		if (_kbhit())
@@ -211,7 +211,7 @@ void rep(int N, int M, int c, char* brd, int pr) {//������ K�� �
 	}
 	upd(N, M, brd);
 }
-void cvt(int N, int M, char(*arr)[3010], char* brd) {//[3010][3010] 2���� �迭�� 1���� �迭�� ����
+void cvt(int N, int M, char(*arr)[3010], char* brd) {//[3010][3010] 2차원 배열을 1차원 배열에 담음
 	int i;
 	for (i = 0; i < N; i++)
 	{
@@ -221,7 +221,7 @@ void cvt(int N, int M, char(*arr)[3010], char* brd) {//[3010][3010] 2����
 		}
 	}
 }
-void cvt2(int N, int M, char(*arr)[3010], char* brd) {//[3010][3010] 2���� �迭�� 1���� �迭�� ����
+void cvt2(int N, int M, char(*arr)[3010], char* brd) {//[3010][3010] 2차원 배열에 1차원 배열을 저장
 	int i;
 	for (i = 0; i < N; i++)
 	{
@@ -231,7 +231,7 @@ void cvt2(int N, int M, char(*arr)[3010], char* brd) {//[3010][3010] 2����
 		}
 	}
 }
-void slp(int N, int M, int c, int p, char(*arr)[3010]) {//ũ��, �ݺ� Ƚ��, ��� ���� [3010][3010] 2���� �迭�� �־����� 2���� �迭�� ������ n�� ����
+void slp(int N, int M, int c, int p, char(*arr)[3010]) {//크기, 반복 횟수, 출력 유무 [3010][3010] 2차원 배열이 주어지면 2차원 배열에 연산을 n번 진행
 
 	char* x = (char*)malloc(10000000);
 	memset(x, '.', sizeof(x));
@@ -247,19 +247,19 @@ void slp(int N, int M, int c, int p, char(*arr)[3010]) {//ũ��, �ݺ� Ƚ�
 char arr3[3010][3010];
 void inst()
 {
-	printf("���� ����\n");
-	printf("1 : ���� �����\n");
-	printf("2 : �ҷ�����\n");
-	printf("3 : �����ϱ�\n");
-	printf("4 : �� ĭ ���� �ٲٱ�\n");
-	printf("5 : ���簢�� �κ� ���� �ٲٱ�\n");
-	printf("6 : �� �����ϱ�\n");
-	printf("7 : ũ�� Ȯ��\n");
-	printf("8 : ���� ���� ���\n");
-	printf("9 : ȭ�� Ŭ����\n");
-	printf("0 : ����\n");
-	printf("S : �ӵ� ����\n");
-	printf("H : ����\n");
+	printf("동작 선택\n");
+	printf("1 : 새로 만들기\n");
+	printf("2 : 불러오기\n");
+	printf("3 : 저장하기\n");
+	printf("4 : 한 칸 상태 바꾸기\n");
+	printf("5 : 직사각형 부분 상태 바꾸기\n");
+	printf("6 : 턴 진행하기\n");
+	printf("7 : 크기 확장\n");
+	printf("8 : 현재 상태 출력\n");
+	printf("9 : 화면 클리어\n");
+	printf("0 : 종료\n");
+	printf("S : 속도 조절\n");
+	printf("H : 도움말\n");
 }
 int store(int N, int M, char(*arr)[3010], char name[])
 {
@@ -267,7 +267,7 @@ int store(int N, int M, char(*arr)[3010], char name[])
 	fp = fopen(name, "w");
 	if (fp == NULL)
 	{
-		printf("���� ���� ����");
+		printf("파일 오픈 오류");
 		return 1;
 	}
 	fprintf(fp, "%d %d\n", N, M);
@@ -293,7 +293,7 @@ int load(int* N, int* M, char(*arr)[3010], char name[])
 	fp = fopen(name, "r");
 	if (fp == NULL)
 	{
-		printf("���� ���� ����");
+		printf("파일 오픈 오류");
 		return 1;
 	}
 	static char brr[3010][510];
@@ -324,27 +324,27 @@ int main()
 	inst();
 	while (1)
 	{
-		printf("������ �����Ͻÿ�\n");
+		printf("명령을 선택하시오\n");
 		char arr[100];
 		scanf("%s", arr);
 		int s = strlen(arr);
 		if (s != 1)
 		{
-			printf("�߸��� �����Դϴ�\n");
+			printf("잘못된 명령입니다\n");
 			continue;
 		}
 		else {
 			switch (arr[0]) {
 			case '1':
-				printf("ũ�⸦ ���Ͻÿ�\n");
-				printf("���� ũ�� : ");
+				printf("크기를 정하시오\n");
+				printf("세로 크기 : ");
 				scanf("%d", &N);
-				printf("���� ũ�� : ");
+				printf("가로 크기 : ");
 				scanf("%d", &M);
-				printf("���� �̸��� ���Ͻÿ�\n");
-				printf("���� �̸� : ");
+				printf("파일 이름을 정하시오\n");
+				printf("파일 이름 : ");
 				scanf("%s", filename);
-				printf("�ؽ�Ʈ�� �ҷ��ñ��? (Y/N) ");
+				printf("텍스트를 불러올까요? (Y/N) ");
 				char buff[100] = "";
 				scanf("%s", buff);
 				int inp = 0;
@@ -366,57 +366,57 @@ int main()
 					}
 				}
 				if (store(N, M, arr3, filename))
-					printf("���� ���� ����\n");
+					printf("파일 생성 실패\n");
 				else
-					printf("���� ���� ����\n");
+					printf("파일 생성 성공\n");
 				break;
 			case '2':
-				printf("���� �̸� : ");
+				printf("파일 이름 : ");
 				scanf("%s", filename);
 				memset(arr3, 0, sizeof(arr3));
 				if (load(&N, &M, arr3, filename))
-					printf("�ε� ����\n");
+					printf("로드 실패\n");
 				else
-					printf("�ε� ����\n");
+					printf("로드 성공\n");
 				break;
 			case '3':
 				if (strlen(filename) == 0)
 				{
-					printf("�ε�� ������ �����ϴ�\n");
+					printf("로드된 파일이 없습니다\n");
 					break;
 				}
-				printf("�ٸ� �̸����� ����? (Y/N) :");
+				printf("다른 이름으로 저장? (Y/N) :");
 				scanf("%s", buff);
 				if (buff[0] == 'Y' || buff[0] == 'y') {
-					printf("���� �̸��� ���Ͻÿ�\n");
-					printf("���� �̸� : ");
+					printf("파일 이름을 정하시오\n");
+					printf("파일 이름 : ");
 					scanf("%s", filename);
 				}
 				if (store(N, M, arr3, filename))
-					printf("���� ����\n");
+					printf("저장 실패\n");
 				else
-					printf("���� ����\n");
+					printf("저장 성공\n");
 				break;
 			case '4':
 				if (strlen(filename) == 0)
 				{
-					printf("�ε�� ������ �����ϴ�\n");
+					printf("로드된 파일이 없습니다\n");
 					break;
 				}
-				printf("�ٲ� ��ġ�� ��(0���� ����) : ");
+				printf("바꿀 위치의 행(0부터 시작) : ");
 				int x, y;
 				scanf("%d", &x);
-				printf("�ٲ� ��ġ�� ��(0���� ����) : ");
+				printf("바꿀 위치의 열(0부터 시작) : ");
 				scanf("%d", &y);
 				if (x < 0 || y < 0 || x >= N || y >= M) {
-					printf("�߸��� ��ġ�Դϴ�\n");
+					printf("잘못된 위치입니다\n");
 					break;
 				}
-				printf("���� %d, %d�� %s �ֽ��ϴ�\n", x, y, (arr3[x][y] == '.') ? "�׾�" : "���");
-				printf("�ٲٽðڽ��ϱ�? (Y/N) ");
+				printf("현재 %d, %d는 %s 있습니다\n", x, y, (arr3[x][y] == '.') ? "죽어" : "살아");
+				printf("바꾸시겠습니까? (Y/N) ");
 				scanf("%s", buff);
 				if (buff[0] == 'Y' || buff[0] == 'y') {
-					printf("�ٲ���ϴ�\n");
+					printf("바꿨습니다\n");
 					if (arr3[x][y] == '.')
 						arr3[x][y] = 'O';
 					else
@@ -424,29 +424,29 @@ int main()
 				}
 				else
 				{
-					printf("����߽��ϴ�\n");
+					printf("취소했습니다\n");
 				}
 				break;
 			case '5':
 				if (strlen(filename) == 0)
 				{
-					printf("�ε�� ������ �����ϴ�\n");
+					printf("로드된 파일이 없습니다\n");
 					break;
 				}
-				printf("�ٲ� ���簢�� ���� �� �������� ��(0���� ����) : ");
+				printf("바꿀 직사각형 왼쪽 위 꼭짓점의 행(0부터 시작) : ");
 				scanf("%d", &x);
-				printf("�ٲ� ���簢�� ���� �� �������� ��(0���� ����) : ");
+				printf("바꿀 직사각형 왼쪽 위 꼭짓점의 열(0부터 시작) : ");
 				scanf("%d", &y);
 				int h, w;
-				printf("�ٲ� ���簢�� ���� ���� : ");
+				printf("바꿀 직사각형 세로 높이 : ");
 				scanf("%d", &h);
-				printf("�ٲ� ���簢�� ���� ���� : ");
+				printf("바꿀 직사각형 가로 높이 : ");
 				scanf("%d", &w);
 				if (x < 0 || y < 0 || x + h - 1 >= N || y + w - 1 >= M) {
-					printf("�߸��� ��ġ�Դϴ�\n");
+					printf("잘못된 위치입니다\n");
 					break;
 				}
-				printf("�� �κ��� ��ü�� ����� �Է��Ͻÿ�\n");
+				printf("이 부분을 대체할 모양을 입력하시오\n");
 				static char arr[3010][3010];
 				for (i = 0; i < h; i++)
 				{
@@ -456,7 +456,7 @@ int main()
 				{
 					if (strlen(arr[i]) != w)
 					{
-						printf("ũ�Ⱑ �߸��Ǿ����ϴ�\n");
+						printf("크기가 잘못되었습니다\n");
 						break;
 					}
 				}
@@ -470,21 +470,21 @@ int main()
 							arr3[i + x][j + y] = arr[i][j];
 						}
 					}
-					printf("�ٲ���ϴ�\n");
+					printf("바꿨습니다\n");
 				}
 				break;
 			case '6':
 				if (strlen(filename) == 0)
 				{
-					printf("�ε�� ������ �����ϴ�\n");
+					printf("로드된 파일이 없습니다\n");
 					break;
 				}
-				printf("������ �ϼ� �Է� : ");
+				printf("진행할 턴수 입력 : ");
 				int c;
 				scanf("%d", &c);
 				int p = 0;
 				if (N <= 100 && M <= 100) {
-					printf("�� �ϸ��� �ֿܼ� ����ұ��? (Y/N) ");
+					printf("매 턴마다 콘솔에 출력할까요? (Y/N) ");
 					char buff[100] = "";
 					scanf("%s", buff);
 					if (buff[0] == 'Y' || buff[0] == 'y') {
@@ -494,10 +494,10 @@ int main()
 				slp(N, M, c, p, arr3);
 				break;
 			case '7':
-				printf("ũ�⸦ ���Ͻÿ�\n");
-				printf("���� ũ�� : ");
+				printf("크기를 정하시오\n");
+				printf("세로 크기 : ");
 				scanf("%d", &N);
-				printf("���� ũ�� : ");
+				printf("가로 크기 : ");
 				scanf("%d", &M);
 				for (i = 0; i < N; i++)
 				{
@@ -512,7 +512,7 @@ int main()
 			case '8':
 				if (strlen(filename) == 0)
 				{
-					printf("�ε�� ������ �����ϴ�\n");
+					printf("로드된 파일이 없습니다\n");
 					break;
 				}
 				for (i = 0; i < N; i++)
@@ -531,7 +531,7 @@ int main()
 				break;
 			case 'S':
 			case 's':
-				printf("�ϴ� �ð��� �и��� ������ �Է� : ");
+				printf("턴당 시간을 밀리초 단위로 입력 : ");
 				scanf("%d", &spd);
 				break;
 			}
